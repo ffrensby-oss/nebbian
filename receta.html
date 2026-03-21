@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Receta — Sabores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --cream: #faf7f2;
+            --dark: #1a1208;
+            --brown: #6b3f1e;
+            --orange: #e8651a;
+            --muted: #9c8c7a;
+            --border: #ede8e0;
+            --white: #ffffff;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); }
+
+        /* ── NAV ── */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1.2rem 5%; border-bottom: 1px solid var(--border);
+            background: var(--cream); position: sticky; top: 0; z-index: 100;
+        }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.7rem; color: var(--brown); text-decoration: none; }
+        .logo span { color: var(--orange); font-style: italic; }
+        .btn { padding: 0.55rem 1.3rem; border-radius: 100px; font-family: 'DM Sans', sans-serif; font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; text-decoration: none; border: none; }
+        .btn-outline { background: transparent; border: 1.5px solid var(--brown); color: var(--brown); }
+        .btn-outline:hover { background: var(--brown); color: white; }
+        .btn-primary { background: var(--orange); color: white; }
+        .btn-primary:hover { background: #c9541a; }
+        .nav-actions { display: flex; gap: 0.8rem; }
+        .back-link { display: flex; align-items: center; gap: 0.5rem; color: var(--muted); text-decoration: none; font-size: 0.88rem; transition: color 0.2s; }
+        .back-link:hover { color: var(--orange); }
+
+        /* ── HERO DE RECETA ── */
+        .recipe-hero {
+            position: relative; height: 70vh; min-height: 480px; overflow: hidden;
+            display: flex; align-items: flex-end;
+        }
+        .recipe-hero img {
+            position: absolute; inset: 0; width: 100%; height: 100%;
+            object-fit: cover; transform: scale(1.05);
+            animation: heroZoom 8s ease forwards;
+        }
+        @keyframes heroZoom { to { transform: scale(1); } }
+        .recipe-hero-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(to top, rgba(26,18,8,0.92) 0%, rgba(26,18,8,0.3) 50%, transparent 100%);
+        }
+        .recipe-hero-content {
+            position: relative; z-index: 2; padding: 3rem 7%; width: 100%;
+            animation: fadeUp 0.7s 0.2s ease both;
+        }
+        .recipe-breadcrumb {
+            font-size: 0.78rem; color: rgba(255,255,255,0.6); margin-bottom: 1rem;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .recipe-breadcrumb a { color: rgba(255,255,255,0.6); text-decoration: none; }
+        .recipe-breadcrumb a:hover { color: var(--orange); }
+        .recipe-hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2rem, 5vw, 3.8rem);
+            color: white; line-height: 1.1; max-width: 700px; margin-bottom: 1.2rem;
+        }
+        .recipe-hero-meta {
+            display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: center;
+        }
+        .meta-chip {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 100px; padding: 0.45rem 1rem;
+            font-size: 0.85rem; color: white;
+        }
+        .meta-chip.highlight { background: var(--orange); border-color: var(--orange); }
+        .author-chip {
+            display: flex; align-items: center; gap: 0.6rem; color: rgba(255,255,255,0.8); font-size: 0.88rem;
+        }
+        .author-avatar-sm {
+            width: 30px; height: 30px; border-radius: 50%; background: var(--orange);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 0.72rem; font-weight: 700;
+        }
+
+        /* ── AD BANNER TOP ── */
+        .ad-banner {
+            background: #f0ebe2; border-top: 1px dashed #c4b9a8; border-bottom: 1px dashed #c4b9a8;
+            text-align: center; padding: 1.2rem;
+            font-size: 0.75rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        /* ── LAYOUT PRINCIPAL ── */
+        .recipe-layout {
+            display: grid; grid-template-columns: 1fr 340px;
+            gap: 3rem; padding: 3rem 7%; max-width: 1300px; margin: 0 auto;
+        }
+
+        /* ── CONTENIDO IZQUIERDO ── */
+        .recipe-description {
+            font-size: 1.1rem; color: var(--muted); line-height: 1.8;
+            padding-bottom: 2rem; border-bottom: 1px solid var(--border);
+            margin-bottom: 2rem;
+        }
+
+        /* ── STATS ── */
+        .recipe-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            gap: 1rem; margin-bottom: 2.5rem;
+        }
+        .stat-card {
+            background: white; border: 1px solid var(--border); border-radius: 14px;
+            padding: 1.2rem; text-align: center;
+        }
+        .stat-card-icon { font-size: 1.4rem; margin-bottom: 0.4rem; }
+        .stat-card-value { font-family: 'Playfair Display', serif; font-size: 1.4rem; color: var(--brown); font-weight: 700; }
+        .stat-card-label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ── AD MEDIO (entre secciones) ── */
+        .ad-inline {
+            background: #f0ebe2; border: 1px dashed #c4b9a8; border-radius: 12px;
+            text-align: center; padding: 1.5rem; margin: 2rem 0;
+            font-size: 0.75rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+        }
+
+        /* ── INGREDIENTES ── */
+        .section-title {
+            font-family: 'Playfair Display', serif; font-size: 1.6rem;
+            color: var(--dark); margin-bottom: 1.2rem;
+            display: flex; align-items: center; gap: 0.7rem;
+        }
+        .section-title::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+        .ingredients-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-bottom: 2.5rem;
+        }
+        .ingredient-item {
+            display: flex; align-items: center; gap: 0.8rem;
+            background: white; border: 1px solid var(--border); border-radius: 10px;
+            padding: 0.8rem 1rem; font-size: 0.92rem; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ingredient-item:hover { border-color: var(--orange); }
+        .ingredient-item.checked { opacity: 0.5; text-decoration: line-through; }
+        .ingredient-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--orange); flex-shrink: 0;
+        }
+
+        /* ── PASOS ── */
+        .steps-list { display: flex; flex-direction: column; gap: 1.5rem; margin-bottom: 2.5rem; }
+        .step-item {
+            display: flex; gap: 1.5rem; align-items: flex-start;
+            background: white; border: 1px solid var(--border); border-radius: 16px;
+            padding: 1.5rem; transition: box-shadow 0.2s;
+        }
+        .step-item:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
+        .step-number {
+            font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 700;
+            color: var(--orange); line-height: 1; flex-shrink: 0; width: 40px;
+        }
+        .step-text { font-size: 0.97rem; line-height: 1.7; color: var(--dark); padding-top: 0.3rem; }
+
+        /* ── SIDEBAR ── */
+        .sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+
+        .ad-sidebar {
+            background: #f0ebe2; border: 1px dashed #c4b9a8; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center; flex-direction: column;
+            gap: 0.5rem; min-height: 250px; color: var(--muted);
+            font-size: 0.75rem; letter-spacing: 1px; text-transform: uppercase;
+            position: sticky; top: 80px;
+        }
+
+        .sidebar-card {
+            background: white; border: 1px solid var(--border); border-radius: 16px;
+            overflow: hidden;
+        }
+        .sidebar-card-header {
+            padding: 1.2rem 1.5rem; border-bottom: 1px solid var(--border);
+            font-family: 'Playfair Display', serif; font-size: 1.1rem;
+        }
+        .sidebar-card-body { padding: 1.2rem 1.5rem; }
+
+        /* Compartir */
+        .share-buttons { display: flex; flex-direction: column; gap: 0.6rem; }
+        .share-btn {
+            display: flex; align-items: center; gap: 0.8rem;
+            padding: 0.7rem 1rem; border-radius: 10px; border: 1.5px solid var(--border);
+            background: white; cursor: pointer; font-size: 0.88rem; font-family: 'DM Sans', sans-serif;
+            color: var(--dark); transition: all 0.2s; font-weight: 500;
+        }
+        .share-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+        /* Rating */
+        .rating-stars { display: flex; gap: 0.4rem; font-size: 1.6rem; cursor: pointer; margin-bottom: 0.8rem; }
+        .star { transition: transform 0.15s; }
+        .star:hover { transform: scale(1.2); }
+        .star.active { color: #f59e0b; }
+        .star.inactive { filter: grayscale(1); opacity: 0.4; }
+        .rating-label { font-size: 0.85rem; color: var(--muted); }
+
+        /* Recetas relacionadas */
+        .related-recipe {
+            display: flex; gap: 1rem; align-items: center;
+            padding: 0.8rem 0; border-bottom: 1px solid var(--border); cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .related-recipe:last-child { border-bottom: none; }
+        .related-recipe:hover { opacity: 0.7; }
+        .related-img { width: 60px; height: 60px; border-radius: 10px; object-fit: cover; flex-shrink: 0; }
+        .related-info { flex: 1; }
+        .related-title { font-size: 0.88rem; font-weight: 500; color: var(--dark); line-height: 1.3; margin-bottom: 0.2rem; }
+        .related-meta { font-size: 0.75rem; color: var(--muted); }
+
+        /* ── LOADING ── */
+        .page-loading {
+            display: flex; align-items: center; justify-content: center;
+            min-height: 60vh; flex-direction: column; gap: 1rem; color: var(--muted);
+        }
+        .loading-spinner {
+            width: 40px; height: 40px; border: 3px solid var(--border);
+            border-top-color: var(--orange); border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--dark); color: #9c8c7a; padding: 2.5rem 7%;
+            text-align: center; margin-top: 3rem;
+        }
+        footer .logo { color: var(--cream); font-size: 1.4rem; }
+        footer p { font-size: 0.82rem; margin-top: 0.5rem; }
+
+        /* ── ANIMATIONS ── */
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 900px) {
+            .recipe-layout { grid-template-columns: 1fr; }
+            .recipe-stats { grid-template-columns: repeat(2, 1fr); }
+            .ingredients-grid { grid-template-columns: 1fr; }
+            .ad-sidebar { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <a href="i.html" class="logo">Sa<span>bores</span></a>
+    <a href="i.html" class="back-link">← Volver a recetas</a>
+    <div class="nav-actions">
+        <a href="#" class="btn btn-outline">Iniciar sesión</a>
+        <a href="#" class="btn btn-primary">Publicar receta</a>
+    </div>
+</nav>
+
+<!-- CONTENIDO DINÁMICO -->
+<div id="pageContent">
+    <div class="page-loading">
+        <div class="loading-spinner"></div>
+        <p>Cargando receta...</p>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+    <div class="logo">Sa<span style="color:var(--orange);font-style:italic">bores</span></div>
+    <p>Una comunidad de cocineros reales compartiendo recetas auténticas.</p>
+</footer>
+
+<script>
+    const SUPABASE_URL = 'https://rwkermqcekptwixnckgy.supabase.co'
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2VybXFjZWtwdHdpeG5ja2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODkzMTAsImV4cCI6MjA4OTY2NTMxMH0.brf_cSI--fx6o8pkqydMiVL0_jxmlAMR-ACyQ9v5xsA'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Obtener ID de la URL: receta.html?id=xxxx
+    const params = new URLSearchParams(window.location.search)
+    const recipeId = params.get('id')
+
+    async function loadRecipe() {
+        if (!recipeId) {
+            // Si no hay ID, cargar la primera receta disponible
+            const { data } = await db.from('recipes').select('id').limit(1)
+            if (data && data.length > 0) {
+                window.location.search = `?id=${data[0].id}`
+            } else {
+                document.getElementById('pageContent').innerHTML = `
+            <div class="page-loading"><div>🍽</div><p>No hay recetas disponibles</p></div>`
+            }
+            return
+        }
+
+        const { data: recipe, error } = await db
+            .from('recipes')
+            .select('*, categories(name, emoji)')
+            .eq('id', recipeId)
+            .single()
+
+        if (error || !recipe) {
+            document.getElementById('pageContent').innerHTML = `
+          <div class="page-loading"><div>⚠️</div><p>Receta no encontrada</p></div>`
+            return
+        }
+
+        // Cargar recetas relacionadas
+        const { data: related } = await db
+            .from('recipes')
+            .select('id, title, image_url, time_minutes')
+            .neq('id', recipeId)
+            .limit(3)
+
+        renderRecipe(recipe, related || [])
+    }
+
+    function renderRecipe(r, related) {
+        const img = r.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=1200&q=80'
+        const cat = r.categories ? `${r.categories.emoji || ''} ${r.categories.name}` : '🍽 General'
+        const initials = (r.author_name || 'AN').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
+
+        // Parsear ingredientes y pasos (separados por salto de línea)
+        const ingredients = r.ingredients
+            ? r.ingredients.split('\n').filter(i => i.trim())
+            : ['Ingredientes no especificados']
+
+        const steps = r.steps
+            ? r.steps.split('\n').filter(s => s.trim())
+            : ['Pasos no especificados']
+
+        document.title = `${r.title} — Sabores`
+
+        document.getElementById('pageContent').innerHTML = `
+        <!-- HERO -->
+        <div class="recipe-hero">
+          <img src="${img}" alt="${r.title}"/>
+          <div class="recipe-hero-overlay"></div>
+          <div class="recipe-hero-content">
+            <div class="recipe-breadcrumb">
+              <a href="i.html">Inicio</a> › <a href="i.html">${cat}</a> › ${r.title}
+            </div>
+            <h1>${r.title}</h1>
+            <div class="recipe-hero-meta">
+              <div class="meta-chip">⏱ ${r.time_minutes || '?'} min</div>
+              <div class="meta-chip">👥 ${r.servings || '?'} porciones</div>
+              <div class="meta-chip highlight">🔥 ${r.difficulty || 'Fácil'}</div>
+              <div class="meta-chip">⭐ ${r.rating || '—'}</div>
+              <div class="author-chip">
+                <div class="author-avatar-sm">${initials}</div>
+                Por ${r.author_name || 'Anónimo'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANUNCIO BANNER -->
+        <div class="ad-banner">📢 Publicidad — Google AdSense (728×90) — Aquí va tu código de AdSense</div>
+
+        <!-- LAYOUT -->
+        <div class="recipe-layout">
+
+          <!-- COLUMNA PRINCIPAL -->
+          <div>
+            ${r.description ? `<p class="recipe-description">${r.description}</p>` : ''}
+
+            <!-- STATS -->
+            <div class="recipe-stats">
+              <div class="stat-card">
+                <div class="stat-card-icon">⏱</div>
+                <div class="stat-card-value">${r.time_minutes || '?'}</div>
+                <div class="stat-card-label">Minutos</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">👥</div>
+                <div class="stat-card-value">${r.servings || '?'}</div>
+                <div class="stat-card-label">Porciones</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">🔥</div>
+                <div class="stat-card-value">${r.difficulty || '—'}</div>
+                <div class="stat-card-label">Dificultad</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-card-icon">⭐</div>
+                <div class="stat-card-value">${r.rating || '—'}</div>
+                <div class="stat-card-label">Valoración</div>
+              </div>
+            </div>
+
+            <!-- INGREDIENTES -->
+            <h2 class="section-title">🧂 Ingredientes</h2>
+            <div class="ingredients-grid">
+              ${ingredients.map(ing => `
+                <div class="ingredient-item" onclick="this.classList.toggle('checked')">
+                  <div class="ingredient-dot"></div>
+                  ${ing}
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- ANUNCIO MEDIO (muy rentable — entre secciones) -->
+            <div class="ad-inline">
+              📢 Anuncio en contenido (336×280) — Reemplaza con código AdSense
+            </div>
+
+            <!-- PASOS -->
+            <h2 class="section-title">👨‍🍳 Preparación</h2>
+            <div class="steps-list">
+              ${steps.map((step, i) => `
+                <div class="step-item">
+                  <div class="step-number">${String(i + 1).padStart(2, '0')}</div>
+                  <div class="step-text">${step}</div>
+                </div>
+              `).join('')}
+            </div>
+
+            <!-- ANUNCIO FINAL (después del contenido) -->
+            <div class="ad-inline">
+              📢 Anuncio final (728×90) — Reemplaza con código AdSense
+            </div>
+
+          </div>
+
+          <!-- SIDEBAR -->
+          <aside class="sidebar">
+
+            <!-- ANUNCIO SIDEBAR -->
+            <div class="ad-sidebar">
+              <div style="font-size:1.5rem">📢</div>
+              <div>Anuncio 300×600</div>
+              <div style="font-size:0.7rem;opacity:0.7">Google AdSense</div>
+            </div>
+
+            <!-- COMPARTIR -->
+            <div class="sidebar-card">
+              <div class="sidebar-card-header">Compartir receta</div>
+              <div class="sidebar-card-body">
+                <div class="share-buttons">
+                  <button class="share-btn" onclick="shareRecipe('whatsapp')">📱 WhatsApp</button>
+                  <button class="share-btn" onclick="shareRecipe('copy')">🔗 Copiar enlace</button>
+                  <button class="share-btn" onclick="shareRecipe('twitter')">🐦 Twitter / X</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- VALORAR -->
+            <div class="sidebar-card">
+              <div class="sidebar-card-header">Valorar receta</div>
+              <div class="sidebar-card-body">
+                <div class="rating-stars" id="ratingStars">
+                  ${[1, 2, 3, 4, 5].map(n => `<span class="star inactive" data-val="${n}" onclick="setRating(${n})">⭐</span>`).join('')}
+                </div>
+                <div class="rating-label" id="ratingLabel">Haz click para valorar</div>
+              </div>
+            </div>
+
+            <!-- RECETAS RELACIONADAS -->
+            ${related.length > 0 ? `
+            <div class="sidebar-card">
+              <div class="sidebar-card-header">También te puede gustar</div>
+              <div class="sidebar-card-body" style="padding-top:0.5rem">
+                ${related.map(rel => `
+                  <div class="related-recipe" onclick="window.location.search='?id=${rel.id}'">
+                    <img class="related-img"
+                      src="${rel.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=200&q=60'}"
+                      alt="${rel.title}"/>
+                    <div class="related-info">
+                      <div class="related-title">${rel.title}</div>
+                      <div class="related-meta">⏱ ${rel.time_minutes || '?'} min</div>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>` : ''}
+
+          </aside>
+        </div>
+      `
+    }
+
+    // ── COMPARTIR ──
+    function shareRecipe(platform) {
+        const url = window.location.href
+        const title = document.title
+        if (platform === 'whatsapp') {
+            window.open(`https://wa.me/?text=${encodeURIComponent(title + ' ' + url)}`)
+        } else if (platform === 'twitter') {
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`)
+        } else if (platform === 'copy') {
+            navigator.clipboard.writeText(url)
+            alert('¡Enlace copiado!')
+        }
+    }
+
+    // ── VALORAR ──
+    function setRating(val) {
+        document.querySelectorAll('.star').forEach(s => {
+            s.classList.toggle('active', parseInt(s.dataset.val) <= val)
+            s.classList.toggle('inactive', parseInt(s.dataset.val) > val)
+        })
+        const labels = ['', 'Necesita mejorar', 'Regular', 'Buena receta', 'Muy buena', '¡Excelente!']
+        document.getElementById('ratingLabel').textContent = labels[val]
+    }
+
+    loadRecipe()
+</script>
+</body>
+</html>

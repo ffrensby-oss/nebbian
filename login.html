@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Entrar — Sabores</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --cream: #faf7f2;
+            --dark: #1a1208;
+            --brown: #6b3f1e;
+            --orange: #e8651a;
+            --muted: #9c8c7a;
+            --border: #ede8e0;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--dark);
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        /* ── LADO IZQUIERDO (imagen) ── */
+        .auth-visual {
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+        .auth-visual img {
+            width: 100%; height: 100%;
+            object-fit: cover;
+            animation: slowZoom 12s ease forwards;
+        }
+        @keyframes slowZoom { from { transform: scale(1.08); } to { transform: scale(1); } }
+        .auth-visual-overlay {
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(107,63,30,0.85) 0%, rgba(232,101,26,0.6) 100%);
+        }
+        .auth-visual-content {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: column;
+            justify-content: space-between;
+            padding: 3rem;
+            color: white;
+        }
+        .logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem; color: white; text-decoration: none;
+        }
+        .logo span { color: rgba(255,200,150,0.9); font-style: italic; }
+        .visual-quote {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 3vw, 2.8rem);
+            line-height: 1.2;
+            font-style: italic;
+        }
+        .visual-quote em { color: rgba(255,200,150,0.9); font-style: normal; }
+        .visual-features { display: flex; flex-direction: column; gap: 1rem; }
+        .feature-item {
+            display: flex; align-items: center; gap: 1rem;
+            font-size: 0.92rem; color: rgba(255,255,255,0.85);
+        }
+        .feature-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            background: rgba(255,255,255,0.15); backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem; flex-shrink: 0;
+        }
+
+        /* ── LADO DERECHO (formulario) ── */
+        .auth-form-side {
+            display: flex; align-items: center; justify-content: center;
+            padding: 3rem 2rem;
+            background: var(--cream);
+        }
+        .auth-box {
+            width: 100%; max-width: 420px;
+            animation: fadeUp 0.6s ease both;
+        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .auth-box h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2rem; color: var(--dark);
+            margin-bottom: 0.4rem;
+        }
+        .auth-box p {
+            color: var(--muted); font-size: 0.95rem;
+            margin-bottom: 2rem; line-height: 1.5;
+        }
+
+        /* Tabs */
+        .auth-tabs {
+            display: flex; background: white;
+            border: 1.5px solid var(--border); border-radius: 100px;
+            padding: 4px; margin-bottom: 2rem;
+        }
+        .auth-tab {
+            flex: 1; padding: 0.6rem; border-radius: 100px;
+            border: none; background: transparent; cursor: pointer;
+            font-family: 'DM Sans', sans-serif; font-size: 0.9rem;
+            font-weight: 500; color: var(--muted); transition: all 0.25s;
+        }
+        .auth-tab.active { background: var(--orange); color: white; }
+
+        /* Inputs */
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.2rem; }
+        .form-label { font-size: 0.82rem; font-weight: 500; color: var(--dark); letter-spacing: 0.3px; }
+        .form-input {
+            padding: 0.85rem 1.1rem;
+            border: 1.5px solid var(--border);
+            border-radius: 12px; outline: none;
+            font-family: 'DM Sans', sans-serif; font-size: 0.95rem;
+            color: var(--dark); background: white;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            border-color: var(--orange);
+            box-shadow: 0 0 0 3px rgba(232,101,26,0.1);
+        }
+        .form-input::placeholder { color: #c4b9a8; }
+
+        /* Botón submit */
+        .btn-submit {
+            width: 100%; padding: 0.95rem;
+            background: var(--orange); color: white;
+            border: none; border-radius: 12px;
+            font-family: 'DM Sans', sans-serif; font-size: 1rem;
+            font-weight: 500; cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            margin-top: 0.5rem;
+        }
+        .btn-submit:hover { background: #c9541a; }
+        .btn-submit:active { transform: scale(0.98); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Mensaje error/éxito */
+        .auth-message {
+            padding: 0.85rem 1.1rem; border-radius: 10px;
+            font-size: 0.88rem; margin-bottom: 1.2rem;
+            display: none;
+        }
+        .auth-message.error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; display: block; }
+        .auth-message.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; display: block; }
+
+        /* Divider */
+        .divider {
+            display: flex; align-items: center; gap: 1rem;
+            margin: 1.5rem 0; color: var(--muted); font-size: 0.82rem;
+        }
+        .divider::before, .divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+
+        /* Footer del form */
+        .auth-footer {
+            text-align: center; margin-top: 1.5rem;
+            font-size: 0.85rem; color: var(--muted);
+        }
+        .auth-footer a { color: var(--orange); text-decoration: none; font-weight: 500; }
+        .auth-footer a:hover { text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            body { grid-template-columns: 1fr; }
+            .auth-visual { display: none; }
+            .auth-form-side { padding: 2rem 1.5rem; min-height: 100vh; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- LADO VISUAL -->
+<div class="auth-visual">
+    <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&q=80" alt="Cocina"/>
+    <div class="auth-visual-overlay"></div>
+    <div class="auth-visual-content">
+        <a href="index.html" class="logo">Sa<span>bores</span></a>
+        <div class="visual-quote">
+            Cocinar es un acto de <em>amor</em> que se comparte
+        </div>
+        <div class="visual-features">
+            <div class="feature-item">
+                <div class="feature-icon">📖</div>
+                Accede a miles de recetas exclusivas
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">✍️</div>
+                Publica tus propias recetas
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">❤️</div>
+                Guarda tus favoritas
+            </div>
+            <div class="feature-item">
+                <div class="feature-icon">👨‍🍳</div>
+                Únete a la comunidad de cocineros
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LADO FORMULARIO -->
+<div class="auth-form-side">
+    <div class="auth-box">
+
+        <h1 id="formTitle">Bienvenido de nuevo</h1>
+        <p id="formSubtitle">Inicia sesión para acceder a tu cuenta</p>
+
+        <!-- TABS -->
+        <div class="auth-tabs">
+            <button class="auth-tab active" onclick="switchTab('login')">Iniciar sesión</button>
+            <button class="auth-tab" onclick="switchTab('register')">Crear cuenta</button>
+        </div>
+
+        <!-- MENSAJE -->
+        <div class="auth-message" id="authMessage"></div>
+
+        <!-- FORMULARIO LOGIN -->
+        <div id="loginForm">
+            <div class="form-group">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" class="form-input" id="loginEmail" placeholder="tu@correo.com"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" class="form-input" id="loginPassword" placeholder="Tu contraseña"/>
+            </div>
+            <button class="btn-submit" onclick="handleLogin()" id="loginBtn">
+                Iniciar sesión →
+            </button>
+            <div class="auth-footer">
+                ¿No tienes cuenta? <a href="#" onclick="switchTab('register')">Regístrate gratis</a>
+            </div>
+        </div>
+
+        <!-- FORMULARIO REGISTRO -->
+        <div id="registerForm" style="display:none">
+            <div class="form-group">
+                <label class="form-label">Nombre completo</label>
+                <input type="text" class="form-input" id="registerName" placeholder="Tu nombre"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Correo electrónico</label>
+                <input type="email" class="form-input" id="registerEmail" placeholder="tu@correo.com"/>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Contraseña</label>
+                <input type="password" class="form-input" id="registerPassword" placeholder="Mínimo 6 caracteres"/>
+            </div>
+            <button class="btn-submit" onclick="handleRegister()" id="registerBtn">
+                Crear cuenta →
+            </button>
+            <div class="auth-footer">
+                ¿Ya tienes cuenta? <a href="#" onclick="switchTab('login')">Inicia sesión</a>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    const SUPABASE_URL = 'https://rwkermqcekptwixnckgy.supabase.co'
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2VybXFjZWtwdHdpeG5ja2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODkzMTAsImV4cCI6MjA4OTY2NTMxMH0.brf_cSI--fx6o8pkqydMiVL0_jxmlAMR-ACyQ9v5xsA'
+    const { createClient } = supabase
+    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+    // Si ya está logueado, redirigir al inicio
+    db.auth.getSession().then(({ data }) => {
+        if (data.session) window.location.href = 'index.html'
+    })
+
+    // ── CAMBIAR TAB ──
+    function switchTab(tab) {
+        const isLogin = tab === 'login'
+        document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none'
+        document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block'
+        document.querySelectorAll('.auth-tab').forEach((t, i) => {
+            t.classList.toggle('active', isLogin ? i === 0 : i === 1)
+        })
+        document.getElementById('formTitle').textContent = isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'
+        document.getElementById('formSubtitle').textContent = isLogin
+            ? 'Inicia sesión para acceder a tu cuenta'
+            : 'Únete a la comunidad de Sabores'
+        clearMessage()
+    }
+
+    // ── MOSTRAR MENSAJE ──
+    function showMessage(text, type) {
+        const el = document.getElementById('authMessage')
+        el.textContent = text
+        el.className = `auth-message ${type}`
+    }
+    function clearMessage() {
+        const el = document.getElementById('authMessage')
+        el.className = 'auth-message'
+    }
+
+    // ── LOGIN ──
+    async function handleLogin() {
+        const email = document.getElementById('loginEmail').value.trim()
+        const password = document.getElementById('loginPassword').value
+        const btn = document.getElementById('loginBtn')
+
+        if (!email || !password) { showMessage('Por favor completa todos los campos', 'error'); return }
+
+        btn.disabled = true
+        btn.textContent = 'Entrando...'
+
+        const { data, error } = await db.auth.signInWithPassword({ email, password })
+
+        if (error) {
+            showMessage(translateError(error.message), 'error')
+            btn.disabled = false
+            btn.textContent = 'Iniciar sesión →'
+            return
+        }
+
+        showMessage('¡Sesión iniciada! Redirigiendo...', 'success')
+        setTimeout(() => window.location.href = 'index.html', 1000)
+    }
+
+    // ── REGISTRO ──
+    async function handleRegister() {
+        const name = document.getElementById('registerName').value.trim()
+        const email = document.getElementById('registerEmail').value.trim()
+        const password = document.getElementById('registerPassword').value
+        const btn = document.getElementById('registerBtn')
+
+        if (!name || !email || !password) { showMessage('Por favor completa todos los campos', 'error'); return }
+        if (password.length < 6) { showMessage('La contraseña debe tener al menos 6 caracteres', 'error'); return }
+
+        btn.disabled = true
+        btn.textContent = 'Creando cuenta...'
+
+        const { data, error } = await db.auth.signUp({
+            email,
+            password,
+            options: { data: { full_name: name } }
+        })
+
+        if (error) {
+            showMessage(translateError(error.message), 'error')
+            btn.disabled = false
+            btn.textContent = 'Crear cuenta →'
+            return
+        }
+
+        showMessage('¡Cuenta creada! Iniciando sesión...', 'success')
+        setTimeout(() => window.location.href = 'index.html', 1500)
+    }
+
+    // ── TRADUCIR ERRORES ──
+    function translateError(msg) {
+        if (msg.includes('Invalid login')) return 'Correo o contraseña incorrectos'
+        if (msg.includes('already registered')) return 'Este correo ya está registrado'
+        if (msg.includes('Password should')) return 'La contraseña debe tener al menos 6 caracteres'
+        if (msg.includes('valid email')) return 'Introduce un correo válido'
+        return 'Ocurrió un error, inténtalo de nuevo'
+    }
+
+    // Enter para enviar
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+            const isLogin = document.getElementById('loginForm').style.display !== 'none'
+            isLogin ? handleLogin() : handleRegister()
+        }
+    })
+</script>
+</body>
+</html>
