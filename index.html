@@ -5,9 +5,8 @@
      crossorigin="anonymous"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Sabores — Recetas que inspiran</title>
+    <title>Nebbian — Recetas que inspiran</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --cream: #faf7f2;
@@ -131,6 +130,8 @@
         <li><a href="#">Blog</a></li>
     </ul>
     <div class="nav-actions">
+        <a href="login.html" class="btn btn-outline">Iniciar sesión</a>
+        <a href="login.html" class="btn btn-primary">Publicar receta</a>
     </div>
 </nav>
 
@@ -208,7 +209,7 @@
 
 <footer>
     <div>
-        <span class="logo">Sa<span style="color:var(--orange);font-style:italic">bores</span></span>
+        <span class="logo">Ne<span style="color:var(--orange);font-style:italic">bbian</span></span>
         <p>Una comunidad de cocineros reales compartiendo recetas auténticas desde todos los rincones del mundo.</p>
     </div>
     <div>
@@ -232,54 +233,181 @@
 </footer>
 
 <script>
-    const SUPABASE_URL = 'https://rwkermqcekptwixnckgy.supabase.co'
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2VybXFjZWtwdHdpeG5ja2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODkzMTAsImV4cCI6MjA4OTY2NTMxMH0.brf_cSI--fx6o8pkqydMiVL0_jxmlAMR-ACyQ9v5xsA'
-    const { createClient } = supabase
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+    // ── DATOS LOCALES ──
+    const LOCAL_CATEGORIES = [
+        { id: 'pasta',    name: 'Pasta',     emoji: '🍝' },
+        { id: 'carnes',   name: 'Carnes',    emoji: '🥩' },
+        { id: 'vegano',   name: 'Vegano',    emoji: '🥦' },
+        { id: 'postres',  name: 'Postres',   emoji: '🍰' },
+        { id: 'sopas',    name: 'Sopas',     emoji: '🍲' },
+        { id: 'ensaladas',name: 'Ensaladas', emoji: '🥗' },
+        { id: 'mariscos', name: 'Mariscos',  emoji: '🦐' },
+        { id: 'desayunos',name: 'Desayunos', emoji: '🍳' },
+    ]
+
+    const LOCAL_RECIPES = [
+        {
+            id: '1',
+            title: 'Pasta Carbonara Clásica',
+            category_id: 'pasta',
+            category: { name: 'Pasta', emoji: '🍝' },
+            time_minutes: 25,
+            difficulty: 'Fácil',
+            servings: 2,
+            rating: '4.8',
+            author_name: 'María López',
+            image_url: 'https://images.unsplash.com/photo-1612874742237-6526221588e3?w=500&q=80',
+            description: 'La auténtica carbonara italiana: sin nata, solo huevos, queso pecorino y guanciale.',
+            ingredients: '200g espaguetis\n100g guanciale o panceta\n2 yemas de huevo\n1 huevo entero\n80g queso pecorino rallado\nPimienta negra al gusto\nSal para el agua',
+            steps: 'Cocer la pasta al dente en agua con sal.\nSaltear el guanciale cortado en tiras hasta que esté dorado.\nMezclar yemas, huevo entero y queso con pimienta generosa.\nEscurrir la pasta reservando un vaso del agua de cocción.\nFuera del fuego, mezclar la pasta con el guanciale y la mezcla de huevos.\nAgregar agua de cocción poco a poco hasta obtener una salsa cremosa.'
+        },
+        {
+            id: '2',
+            title: 'Pollo al Limón con Hierbas',
+            category_id: 'carnes',
+            category: { name: 'Carnes', emoji: '🥩' },
+            time_minutes: 40,
+            difficulty: 'Media',
+            servings: 4,
+            rating: '4.6',
+            author_name: 'Carlos Ruiz',
+            image_url: 'https://images.unsplash.com/photo-1598103442097-8b74394b95c6?w=500&q=80',
+            description: 'Pechuga de pollo jugosa marinada en limón, ajo y romero al horno.',
+            ingredients: '4 pechugas de pollo\n2 limones (zumo y ralladura)\n4 dientes de ajo\n2 ramitas de romero fresco\nAceite de oliva\nSal y pimienta\n1 cucharadita de pimentón',
+            steps: 'Mezclar zumo de limón, ralladura, ajo picado, romero, aceite, sal, pimienta y pimentón.\nMarinar el pollo en esta mezcla durante al menos 30 minutos.\nPrecalentar el horno a 200°C.\nColocar el pollo en una fuente con la marinada.\nHornear 30-35 minutos, regando con los jugos a mitad de cocción.\nDejar reposar 5 minutos antes de servir.'
+        },
+        {
+            id: '3',
+            title: 'Bowl de Quinoa Vegano',
+            category_id: 'vegano',
+            category: { name: 'Vegano', emoji: '🥦' },
+            time_minutes: 20,
+            difficulty: 'Fácil',
+            servings: 2,
+            rating: '4.7',
+            author_name: 'Ana Verde',
+            image_url: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=500&q=80',
+            description: 'Bowl nutritivo y colorido con quinoa, aguacate, garbanzos crujientes y tahini.',
+            ingredients: '1 taza de quinoa\n1 aguacate\n1 lata de garbanzos\n2 tazas de espinacas\n1 pepino\n10 tomates cherry\nSalsa tahini\nLimón, sal, aceite de oliva',
+            steps: 'Cocinar la quinoa según las instrucciones del paquete.\nEscurrir los garbanzos y saltear con aceite, sal y comino hasta que estén crujientes.\nCortar aguacate, pepino y tomates cherry por la mitad.\nMontar el bowl: quinoa de base, luego espinacas, garbanzos, aguacate y verduras.\nAliñar con tahini diluido con limón y agua, ajustar sal.'
+        },
+        {
+            id: '4',
+            title: 'Tiramisú Tradicional',
+            category_id: 'postres',
+            category: { name: 'Postres', emoji: '🍰' },
+            time_minutes: 30,
+            difficulty: 'Media',
+            servings: 8,
+            rating: '4.9',
+            author_name: 'Giulia Bianchi',
+            image_url: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=500&q=80',
+            description: 'El postre italiano por excelencia: capas de bizcochos, mascarpone y cacao.',
+            ingredients: '500g queso mascarpone\n4 huevos\n100g azúcar\n300ml café espresso frío\n200g bizcochos ladyfinger\n30ml ron o amaretto (opcional)\nCacao en polvo para decorar',
+            steps: 'Separar yemas de claras. Batir yemas con azúcar hasta blanquear.\nIncorporar el mascarpone a la mezcla de yemas con movimientos suaves.\nMontar las claras a punto de nieve e incorporar con movimientos envolventes.\nMezclar el café frío con el licor en un plato.\nSumergir brevemente los bizcochos en el café y colocar una capa en el molde.\nExtender la mitad de la crema de mascarpone.\nRepetir con otra capa de bizcochos y crema.\nRefrigerarse al menos 4 horas. Espolvorear cacao antes de servir.'
+        },
+        {
+            id: '5',
+            title: 'Crema de Tomate y Albahaca',
+            category_id: 'sopas',
+            category: { name: 'Sopas', emoji: '🍲' },
+            time_minutes: 35,
+            difficulty: 'Fácil',
+            servings: 4,
+            rating: '4.5',
+            author_name: 'Pedro Sanz',
+            image_url: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&q=80',
+            description: 'Sopa cremosa de tomate asado con albahaca fresca y un toque de crema.',
+            ingredients: '1kg tomates maduros\n1 cebolla\n4 dientes de ajo\nManojo de albahaca fresca\n500ml caldo de verduras\n100ml nata para cocinar\nAceite de oliva, sal, pimienta\nPizca de azúcar',
+            steps: 'Cortar tomates y cebolla en trozos. Colocar en bandeja con ajo y rociar con aceite.\nAsar a 200°C durante 25 minutos hasta que estén dorados.\nPasar las verduras asadas a una olla con el caldo de verduras.\nAñadir la albahaca y triturar hasta obtener una crema lisa.\nColar si se desea una textura más fina.\nIncorporar la nata, sazonar y calentar sin que hierva.'
+        },
+        {
+            id: '6',
+            title: 'Ensalada Mediterránea',
+            category_id: 'ensaladas',
+            category: { name: 'Ensaladas', emoji: '🥗' },
+            time_minutes: 15,
+            difficulty: 'Fácil',
+            servings: 2,
+            rating: '4.4',
+            author_name: 'Rosa Martín',
+            image_url: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500&q=80',
+            description: 'Ensalada fresca con tomate, pepino, olivas, queso feta y orégano.',
+            ingredients: '3 tomates maduros\n1 pepino\n1/2 cebolla roja\n150g queso feta\nAceitinas negras kalamata\nOrégano seco\nAceite de oliva virgen extra\nSal y pimienta',
+            steps: 'Cortar tomates en gajos, pepino en rodajas y cebolla en aros finos.\nColocar en un cuenco amplio.\nAñadir las aceitunas y desmenuzar el queso feta por encima.\nEspolvorear orégano generosamente.\nAliñar con aceite de oliva, sal y pimienta al gusto.\nDejar reposar 5 minutos antes de servir para que se mezclen los sabores.'
+        },
+        {
+            id: '7',
+            title: 'Gambas al Ajillo',
+            category_id: 'mariscos',
+            category: { name: 'Mariscos', emoji: '🦐' },
+            time_minutes: 15,
+            difficulty: 'Fácil',
+            servings: 4,
+            rating: '4.8',
+            author_name: 'Manolo García',
+            image_url: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=500&q=80',
+            description: 'Tapas clásicas españolas: gambas saltadas con ajo, guindilla y aceite de oliva.',
+            ingredients: '500g gambas peladas\n6 dientes de ajo laminados\n2 guindillas secas\n100ml aceite de oliva virgen extra\nSal gorda\nPerejil fresco picado\nPan para acompañar',
+            steps: 'Calentar el aceite en una cazuela de barro o sartén a fuego alto.\nAñadir el ajo laminado y la guindilla. Saltear 30 segundos.\nAgregar las gambas y saltear 2-3 minutos hasta que estén rosadas.\nSazonar con sal y retirar del fuego inmediatamente.\nEspolvorear perejil fresco y servir al momento en la misma cazuela.'
+        },
+        {
+            id: '8',
+            title: 'Tostadas con Aguacate y Huevo',
+            category_id: 'desayunos',
+            category: { name: 'Desayunos', emoji: '🍳' },
+            time_minutes: 10,
+            difficulty: 'Fácil',
+            servings: 1,
+            rating: '4.6',
+            author_name: 'Laura Vega',
+            image_url: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?w=500&q=80',
+            description: 'El desayuno favorito: pan tostado con aguacate, huevo poché y semillas.',
+            ingredients: '2 rebanadas de pan integral\n1 aguacate maduro\n2 huevos\nJugo de medio limón\nSal, pimienta y chile en hojuelas\nSemillas de sésamo\nMicrobrotes para decorar (opcional)',
+            steps: 'Tostar el pan hasta que esté dorado y crujiente.\nAplastar el aguacate con un tenedor, añadir limón, sal y pimienta.\nExtender el aguacate sobre las tostadas.\nHervir agua con un chorrito de vinagre en un cazo pequeño.\nCrear un remolino en el agua y deslizar el huevo para pocharlo 3 minutos.\nColocar el huevo poché encima, sazonar y añadir chile y sésamo.'
+        }
+    ]
 
     let activeCategory = 'all'
 
-    async function init() {
-        await Promise.all([loadCategories(), loadRecipes()])
+    function init() {
+        loadCategories()
+        loadRecipes()
     }
 
-    async function loadCategories() {
-        const { data, error } = await db.from('categories').select('*').order('name')
-        if (error || !data) return
+    function loadCategories() {
         const container = document.getElementById('categoriesContainer')
-        data.forEach(cat => {
+        LOCAL_CATEGORIES.forEach(cat => {
             const btn = document.createElement('button')
             btn.className = 'category-pill'
             btn.dataset.id = cat.id
-            btn.innerHTML = `<span>${cat.emoji || '🍽'}</span> ${cat.name}`
+            btn.innerHTML = `<span>${cat.emoji}</span> ${cat.name}`
             btn.addEventListener('click', () => {
                 document.querySelectorAll('.category-pill').forEach(b => b.classList.remove('active'))
                 btn.classList.add('active')
                 activeCategory = cat.id
-                document.getElementById('recipesTitle').textContent = `${cat.emoji || ''} ${cat.name}`
+                document.getElementById('recipesTitle').textContent = `${cat.emoji} ${cat.name}`
                 loadRecipes()
             })
             container.appendChild(btn)
         })
     }
 
-    async function loadRecipes(search = '') {
+    function loadRecipes(search = '') {
         const grid = document.getElementById('recipeGrid')
         grid.innerHTML = `<div class="loading"><div class="loading-spinner"></div><p>Cargando recetas...</p></div>`
 
-        let query = db.from('recipes').select('*, categories(name, emoji)').order('created_at', { ascending: false })
-        if (search) query = query.ilike('title', `%${search}%`)
-        if (activeCategory !== 'all') query = query.eq('category_id', activeCategory)
-
-        const { data, error } = await query
-
-        if (error) {
-            grid.innerHTML = `<div class="empty-state"><div>⚠️</div><p>Error al cargar recetas. Revisa la consola.</p></div>`
-            console.error('Supabase error:', error)
-            return
+        // Filtrar por categoría y búsqueda
+        let data = [...LOCAL_RECIPES]
+        if (activeCategory !== 'all') {
+            data = data.filter(r => r.category_id === activeCategory)
+        }
+        if (search) {
+            const q = search.toLowerCase()
+            data = data.filter(r => r.title.toLowerCase().includes(q) || (r.description && r.description.toLowerCase().includes(q)))
         }
 
-        document.getElementById('totalRecipes').textContent = data.length
+        document.getElementById('totalRecipes').textContent = LOCAL_RECIPES.length
 
         if (data.length > 0) {
             const f = data[0]
@@ -297,7 +425,7 @@
         grid.innerHTML = data.map((r, i) => {
             const initials = (r.author_name || 'AN').split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase()
             const color = colors[i % colors.length]
-            const cat = r.categories ? `${r.categories.emoji || ''} ${r.categories.name}` : '🍽 General'
+            const cat = r.category ? `${r.category.emoji || ''} ${r.category.name}` : '🍽 General'
             const img = r.image_url || 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=500&q=80'
             return `
           <div class="recipe-card" style="animation-delay:${i*0.05}s" onclick="window.location.href='receta.html?id=${r.id}'">

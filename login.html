@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Entrar — Sabores</title>
+    <title>Entrar — Nebbian</title>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --cream: #faf7f2;
@@ -165,6 +164,15 @@
         .auth-footer a { color: var(--orange); text-decoration: none; font-weight: 500; }
         .auth-footer a:hover { text-decoration: underline; }
 
+        /* Nota de usuarios demo */
+        .demo-note {
+            background: #fff8f3; border: 1px solid #fddbb8;
+            border-radius: 10px; padding: 0.8rem 1rem;
+            font-size: 0.82rem; color: var(--brown);
+            margin-bottom: 1.2rem; line-height: 1.5;
+        }
+        .demo-note strong { display: block; margin-bottom: 0.2rem; }
+
         /* Responsive */
         @media (max-width: 768px) {
             body { grid-template-columns: 1fr; }
@@ -180,7 +188,7 @@
     <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=900&q=80" alt="Cocina"/>
     <div class="auth-visual-overlay"></div>
     <div class="auth-visual-content">
-        <a href="index.html" class="logo">Sa<span>bores</span></a>
+        <a href="index.html" class="logo">Ne<span>bbian</span></a>
         <div class="visual-quote">
             Cocinar es un acto de <em>amor</em> que se comparte
         </div>
@@ -223,6 +231,10 @@
 
         <!-- FORMULARIO LOGIN -->
         <div id="loginForm">
+            <div class="demo-note">
+                <strong>💡 Usuario de prueba</strong>
+                Email: <code>demo@nebbian.com</code> · Contraseña: <code>demo123</code>
+            </div>
             <div class="form-group">
                 <label class="form-label">Correo electrónico</label>
                 <input type="email" class="form-input" id="loginEmail" placeholder="tu@correo.com"/>
@@ -265,15 +277,35 @@
 </div>
 
 <script>
-    const SUPABASE_URL = 'https://rwkermqcekptwixnckgy.supabase.co'
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ3a2VybXFjZWtwdHdpeG5ja2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwODkzMTAsImV4cCI6MjA4OTY2NTMxMH0.brf_cSI--fx6o8pkqydMiVL0_jxmlAMR-ACyQ9v5xsA'
-    const { createClient } = supabase
-    const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+    // ── AUTH LOCAL CON localStorage ──
+
+    // Usuarios precargados (demo)
+    const DEMO_USERS = [
+        { email: 'demo@nebbian.com', password: 'demo123', name: 'Usuario Demo' }
+    ]
+
+    function getUsers() {
+        const stored = localStorage.getItem('nebbian_users')
+        return stored ? JSON.parse(stored) : [...DEMO_USERS]
+    }
+
+    function saveUsers(users) {
+        localStorage.setItem('nebbian_users', JSON.stringify(users))
+    }
+
+    function setSession(user) {
+        localStorage.setItem('nebbian_session', JSON.stringify({ email: user.email, name: user.name }))
+    }
+
+    function getSession() {
+        const s = localStorage.getItem('nebbian_session')
+        return s ? JSON.parse(s) : null
+    }
 
     // Si ya está logueado, redirigir al inicio
-    db.auth.getSession().then(({ data }) => {
-        if (data.session) window.location.href = 'index.html'
-    })
+    if (getSession()) {
+        window.location.href = 'index.html'
+    }
 
     // ── CAMBIAR TAB ──
     function switchTab(tab) {
@@ -286,7 +318,7 @@
         document.getElementById('formTitle').textContent = isLogin ? 'Bienvenido de nuevo' : 'Crea tu cuenta'
         document.getElementById('formSubtitle').textContent = isLogin
             ? 'Inicia sesión para acceder a tu cuenta'
-            : 'Únete a la comunidad de Sabores'
+            : 'Únete a la comunidad de Nebbian'
         clearMessage()
     }
 
@@ -302,8 +334,8 @@
     }
 
     // ── LOGIN ──
-    async function handleLogin() {
-        const email = document.getElementById('loginEmail').value.trim()
+    function handleLogin() {
+        const email = document.getElementById('loginEmail').value.trim().toLowerCase()
         const password = document.getElementById('loginPassword').value
         const btn = document.getElementById('loginBtn')
 
@@ -312,56 +344,54 @@
         btn.disabled = true
         btn.textContent = 'Entrando...'
 
-        const { data, error } = await db.auth.signInWithPassword({ email, password })
+        // Simular pequeño delay
+        setTimeout(() => {
+            const users = getUsers()
+            const user = users.find(u => u.email.toLowerCase() === email && u.password === password)
 
-        if (error) {
-            showMessage(translateError(error.message), 'error')
-            btn.disabled = false
-            btn.textContent = 'Iniciar sesión →'
-            return
-        }
+            if (!user) {
+                showMessage('Correo o contraseña incorrectos', 'error')
+                btn.disabled = false
+                btn.textContent = 'Iniciar sesión →'
+                return
+            }
 
-        showMessage('¡Sesión iniciada! Redirigiendo...', 'success')
-        setTimeout(() => window.location.href = 'index.html', 1000)
+            setSession(user)
+            showMessage('¡Sesión iniciada! Redirigiendo...', 'success')
+            setTimeout(() => window.location.href = 'index.html', 1000)
+        }, 600)
     }
 
     // ── REGISTRO ──
-    async function handleRegister() {
+    function handleRegister() {
         const name = document.getElementById('registerName').value.trim()
-        const email = document.getElementById('registerEmail').value.trim()
+        const email = document.getElementById('registerEmail').value.trim().toLowerCase()
         const password = document.getElementById('registerPassword').value
         const btn = document.getElementById('registerBtn')
 
         if (!name || !email || !password) { showMessage('Por favor completa todos los campos', 'error'); return }
         if (password.length < 6) { showMessage('La contraseña debe tener al menos 6 caracteres', 'error'); return }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { showMessage('Introduce un correo válido', 'error'); return }
 
         btn.disabled = true
         btn.textContent = 'Creando cuenta...'
 
-        const { data, error } = await db.auth.signUp({
-            email,
-            password,
-            options: { data: { full_name: name } }
-        })
+        setTimeout(() => {
+            const users = getUsers()
+            if (users.find(u => u.email.toLowerCase() === email)) {
+                showMessage('Este correo ya está registrado', 'error')
+                btn.disabled = false
+                btn.textContent = 'Crear cuenta →'
+                return
+            }
 
-        if (error) {
-            showMessage(translateError(error.message), 'error')
-            btn.disabled = false
-            btn.textContent = 'Crear cuenta →'
-            return
-        }
+            users.push({ email, password, name })
+            saveUsers(users)
+            setSession({ email, name })
 
-        showMessage('¡Cuenta creada! Iniciando sesión...', 'success')
-        setTimeout(() => window.location.href = 'index.html', 1500)
-    }
-
-    // ── TRADUCIR ERRORES ──
-    function translateError(msg) {
-        if (msg.includes('Invalid login')) return 'Correo o contraseña incorrectos'
-        if (msg.includes('already registered')) return 'Este correo ya está registrado'
-        if (msg.includes('Password should')) return 'La contraseña debe tener al menos 6 caracteres'
-        if (msg.includes('valid email')) return 'Introduce un correo válido'
-        return 'Ocurrió un error, inténtalo de nuevo'
+            showMessage('¡Cuenta creada! Iniciando sesión...', 'success')
+            setTimeout(() => window.location.href = 'index.html', 1200)
+        }, 700)
     }
 
     // Enter para enviar
